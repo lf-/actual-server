@@ -4,8 +4,9 @@ try {
   config = require('./config');
 } catch (e) {
   let fs = require('fs');
+  let process = require('process');
   let { join } = require('path');
-  let root = fs.existsSync('/data') ? '/data' : __dirname;
+  let root = process.env.ACTUAL_DATA ?? (fs.existsSync('/data') ? '/data' : __dirname);
 
   config = {
     mode: 'development',
