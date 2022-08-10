@@ -105,8 +105,8 @@
               # tailscale usage: see https://tailscale.com/kb/1132/flydotio/
               startScript = pkgs.writeShellScript "start.sh" ''
                 if [[ ! -z "$TAILSCALE_AUTHKEY" ]]; then
-                  ${pkgs.tailscale}/bin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
-                  ${pkgs.tailscale}/bin/tailscaled up --authkey=$TAILSCALE_AUTHKEY --hostname=actual
+                  ${pkgs.tailscale}/bin/tailscaled --state=/data/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
+                  ${pkgs.tailscale}/bin/tailscale up --authkey=$TAILSCALE_AUTHKEY --hostname=actual
                 fi
                 ${pkgs.actual-server}/bin/actual-server
               '';
@@ -115,10 +115,19 @@
               pkgs.dockerTools.buildLayeredImage {
                 name = "actual-server";
                 tag = "latest";
-                contents = [ pkgs.actual-server ];
+
+                contents = pkgs.buildEnv {
+                  name = "image-root";
+                  paths = [ pkgs.bash pkgs.coreutils ];
+                  pathsToLink = [ "/bin" ];
+                };
+
+                extraCommands = ''
+                  mkdir -p var/run/tailscale
+                  mkdir data
+                '';
                 config = {
-                  Entrypoint = [ "${pkgs.tini}/bin/tini" "-g" "--" ];
-                  Cmd = [ startScript ];
+                  Entrypoint = [ "${pkgs.tini}/bin/tini" "-g" "-s" "--" startScript ];
                   ExposedPorts = {
                     "5006/tcp" = {};
                   };
