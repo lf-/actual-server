@@ -1,0 +1,65 @@
+From deb0abb665153b0cadca9ca2a2419d63e8a20a33 Mon Sep 17 00:00:00 2001
+From: Jade Lovelace <jadel@mercury.com>
+Date: Mon, 17 Oct 2022 12:20:18 -0700
+Subject: [PATCH] Badly patch in shared lib linking
+
+---
+ binding.gyp      | 17 ++++++++++++++---
+ deps/common.gypi |  2 +-
+ 2 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/binding.gyp b/binding.gyp
+index 59fa0a8..b595eb8 100644
+--- a/binding.gyp
++++ b/binding.gyp
+@@ -7,7 +7,6 @@
+   'targets': [
+     {
+       'target_name': 'better_sqlite3',
+-      'dependencies': ['deps/sqlite3.gyp:sqlite3'],
+       'sources': ['src/better_sqlite3.cpp'],
+       'cflags': ['-std=c++14'],
+       'xcode_settings': {
+@@ -20,12 +19,24 @@
+             '-Wl,--exclude-libs,ALL',
+           ],
+         }],
++        ['sqlite3_systemlib == ""', {
++          'dependencies': ['deps/sqlite3.gyp:sqlite3'],
++        }],
++        ['sqlite3_systemlib != ""', {
++          'ldflags': [
++            '<!@(pkg-config sqlite3 --libs)'
++          ],
++        }],
+       ],
+     },
+     {
+       'target_name': 'test_extension',
+-      'dependencies': ['deps/sqlite3.gyp:sqlite3'],
+-      'conditions': [['sqlite3 == ""', { 'sources': ['deps/test_extension.c'] }]],
++      'conditions': [
++        ['sqlite3 == ""', { 'sources': ['deps/test_extension.c'] }],
++        ['sqlite3_systemlib == ""', {
++          'dependencies': ['deps/sqlite3.gyp:sqlite3'],
++        }],
++      ],
+     },
+   ],
+ }
+diff --git a/deps/common.gypi b/deps/common.gypi
+index 613adc3..7faaf2a 100644
+--- a/deps/common.gypi
++++ b/deps/common.gypi
+@@ -4,7 +4,7 @@
+ # ===
+ 
+ {
+-  'variables': { 'sqlite3%': '' },
++  'variables': { 'sqlite3%': '', 'sqlite3_systemlib%': '' },
+   'target_defaults': {
+     'default_configuration': 'Release',
+     'msvs_settings': {
+-- 
+2.37.1
+
