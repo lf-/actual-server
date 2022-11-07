@@ -30,6 +30,25 @@ mkYarnPackage rec {
 
   dontStrip = true;
 
+  dontPatchShebangs = true;
+  extraBuildInputs = [ removeReferencesTo ];
+  disallowedReferences = [ nodejs-16_x ];
+
+  distPhase = ''
+    # redundant symlink that introduces a 150mb runtime dep
+    # on the actual-server-modules derivation
+    rm $out/libexec/actual-sync/deps/actual-sync/node_modules
+
+    # .. and replace it with a symlink referencing the output package so the
+    # server can find its web files, since that was broken also
+    ln -s $out/libexec/actual-sync/node_modules $out/libexec/actual-sync/deps/actual-sync/node_modules
+
+
+    sed -i '1c #!${nodejs-slim-16_x}/bin/node' "$(readlink -f "$out/bin/actual-server")"
+
+    find "$out" -type f -executable -exec remove-references-to -t ${nodejs-16_x} '{}' ';'
+  '';
+
   pkgConfig = import ./horrors-beyond-comprehension.nix {
     inherit nodejs sqlite pkg-config autoconf automake libtool python3 jq moreutils;
   };
