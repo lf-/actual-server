@@ -45,6 +45,8 @@
       # build/ has a bunch of stuff we don't need, some
       # with undesirable references
       rm -rf build/
+
+      rm -rf node-addon-api/*.mk
     '';
     nativeBuildInputs = [
       libtool
