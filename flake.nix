@@ -28,6 +28,7 @@
                   ${pkgs.tailscale}/bin/tailscaled --state=/data/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
                   ${pkgs.tailscale}/bin/tailscale up --authkey=$TAILSCALE_AUTHKEY --hostname=actual
                 fi
+                echo ok buddy
                 ${pkgs.actual-server}/bin/actual-server
               '';
 
@@ -46,6 +47,7 @@
                 mkdir -p var/run/tailscale
                 mkdir data
               '';
+              maxLayers = 50;
               config = {
                 Entrypoint = [ "${pkgs.tini}/bin/tini" "-g" "-s" "--" startScript ];
                 ExposedPorts = {
